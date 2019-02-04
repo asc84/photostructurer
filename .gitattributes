@@ -1,0 +1,4 @@
+* text=auto !eol
+/structphoto-gui.bat -text
+/structphoto.bat -text
+/structphoto.py -text
