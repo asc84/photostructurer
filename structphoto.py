@@ -9,7 +9,7 @@ import threading
 from tkinter import filedialog
 from tkinter import messagebox
 
-APPLICATION_TITLE = 'Organize photos for iOS - Please run it as administrator!'
+APPLICATION_TITLE = 'Organize photos for iOS'
 
 SEPARATOR = ' = '  # Works in iOS
 # source_dir = os.path.abspath('h:/temp/test')
@@ -88,34 +88,39 @@ class StructPhotoGUI(tkinter.Tk):
 
         self.e_source_dir_entryVariable = tkinter.StringVar()
         self.e_source_dir = tkinter.Entry(self, textvariable=self.e_source_dir_entryVariable)
-        self.e_source_dir.grid(column=0, row=0, sticky='EW', pady=10)
+        self.e_source_dir.grid(column=0, row=0, columnspan=2, sticky='EW', pady=10)
         self.e_source_dir_entryVariable.set(source_dir)
 
         b_source_dir = tkinter.Button(self, text=u"Select source directory...", command=self.OnSourceDirButtonClick)
-        b_source_dir.grid(column=1, row=0, sticky='EW', pady=10)
+        b_source_dir.grid(column=3, row=0, sticky='EW', pady=10)
 
         self.e_target_dir_entryVariable = tkinter.StringVar()
         self.e_target_dir = tkinter.Entry(self, textvariable=self.e_target_dir_entryVariable)
-        self.e_target_dir.grid(column=0, row=1, sticky='EW', pady=10)
+        self.e_target_dir.grid(column=0, row=1, columnspan=2, sticky='EW', pady=10)
         self.e_target_dir_entryVariable.set(target_dir)
 
         b_target_dir = tkinter.Button(self, text=u"Select target directory...", command=self.OnTargetDirButtonClick)
-        b_target_dir.grid(column=1, row=1, sticky='EW', pady=10)
-
-        self.b_clean = tkinter.Button(self, text=u"Clean", command=self.OnCleanButtonClick)
-        self.b_clean.grid(column=0, row=2, padx=10, pady=10)
-
-        self.b_update = tkinter.Button(self, text=u"Update", command=self.OnUpdateButtonClick)
-        self.b_update.grid(column=1, row=2, padx=10, pady=10)
-
-        self.b_cancel = tkinter.Button(self, text=u"Cancel", command=self.OnCancelButtonClick)
-        self.b_cancel.grid(column=2, row=2, padx=10, pady=10)
+        b_target_dir.grid(column=3, row=1, sticky='EW', pady=10)
 
         self.output_text_area = tkinter.Text()
-        self.output_text_area.grid(column=0, row=3, columnspan=2, sticky='EW', pady=10)
+        self.output_text_area.grid(column=0, row=3, columnspan=3, rowspan=3, sticky='EW', pady=10)
+
+        #create a Scrollbar and associate it with txt
+        scrollb = tkinter.Scrollbar(self, command=self.output_text_area.yview)
+        scrollb.grid(row=3, column=2, rowspan=3, sticky='nsew')
+        self.output_text_area['yscrollcommand'] = scrollb.set
+
+        self.b_clean = tkinter.Button(self, text=u"Clean", command=self.OnCleanButtonClick)
+        self.b_clean.grid(column=3, row=3, sticky='EW')
+
+        self.b_update = tkinter.Button(self, text=u"Update", command=self.OnUpdateButtonClick)
+        self.b_update.grid(column=3, row=4, sticky='EW')
+
+        self.b_cancel = tkinter.Button(self, text=u"Cancel", command=self.OnCancelButtonClick)
+        self.b_cancel.grid(column=3, row=5, sticky='EW')
 
         self.grid_columnconfigure(0, weight=1)
-        self.geometry("700x600")  # You want the size of the app to be 500x500
+        self.geometry("700x600")  # You want the size of the app to be this
         self.resizable(True, True)
         sys.stdout = StdoutRedirector(self.output_text_area)
 
