@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
+from collections import namedtuple
 import os
 import sys
 import shutil
@@ -12,6 +14,7 @@ from tkinter import messagebox
 APPLICATION_TITLE = 'Organize photos for iOS'
 
 SEPARATOR = ' = '  # Works in iOS
+MESSAGE_HIGHLIGHT = '---'
 # source_dir = os.path.abspath('h:/temp/test')
 # target_dir = os.path.abspath('h:/temp/test-albums')
 source_dir = os.path.abspath('h:/Saját/MAIN/Fénykép')
@@ -21,8 +24,10 @@ EXCLUDE_DIRS = [
     'iPod Photo Cache'
 ]
 
+logger = logging.getLogger('structphoto')
 
-def run_cli(arguments):
+
+def run_cli(arguments: argparse.Namespace) -> None:
     print('Source directory is: ' + source_dir)
     print('Target directory is: ' + target_dir)
     print('Excluded directories are: ' + ', '.join(str(ed) for ed in EXCLUDE_DIRS))
@@ -31,54 +36,117 @@ def run_cli(arguments):
 
     if confirmation.upper() == 'Y':
         if arguments.clean:
-            cleanup()
+            CleanupThread(None).execute_with_callback()
         elif arguments.update:
-            update()
+            UpdateThread(None).execute_with_callback()
 
 
-def run_gui():
+def run_gui() -> None:
     app = StructPhotoGUI(None)
     app.mainloop()
 
+class DefaultStoppableThread(threading.Thread):
 
-def cleanup():
-    print('--- Cleaning folder... ---')
-    for f in os.listdir(target_dir):
-        print(f)
-        subpath = os.path.join(target_dir, f)
-        if os.path.isdir(subpath) and not f in EXCLUDE_DIRS:
-            shutil.rmtree(subpath)
-        if os.path.isfile(subpath):
-            os.remove(subpath)
-    print('--- Cleanup DONE ---')
+    def __init__(self, finish_msg: str, term_msg: str, target = None, callback=None, callback_args=None) -> None:
+        # target = kwargs.pop('target')
+        super().__init__(target=self.execute_with_callback)
+        Params = namedtuple('Params', ['finish_msg', 'term_msg', 'method', 'callback', 'callback_args'])
+        self.params = Params(finish_msg=finish_msg, term_msg=term_msg, method=target, callback=callback, callback_args=callback_args)
+        self._stopped = False
+
+    def execute_with_callback(self) -> None:
+        self.params.method()
+        self._print_finish_message()
+        if self.params.callback is not None:
+            self.params.callback(*self.params.callback_args)
+
+    def stop(self) -> None:
+        self._stopped = True
+
+    @property
+    def stopped(self) -> bool:
+        return self._stopped
+
+    def _print_finish_message(self):
+        if self.stopped:
+            self.print_message(self.params.term_msg)
+        else:
+            self.print_message(self.params.finish_msg)
+
+    @classmethod
+    def print_message(cls, toPrint: str) -> None:
+        print(MESSAGE_HIGHLIGHT + ' ' + toPrint + ' ' + MESSAGE_HIGHLIGHT)
 
 
-def update():
-    cleanup()
-    print('--- Creating hardlinks... ---')
-    sourcedir_splitted = os.path.normpath(source_dir).split(os.sep)
+class CleanupThread(DefaultStoppableThread):
+    def __init__(self, callback=None, callback_args=None) -> None:
+        super().__init__(finish_msg='Cleanup DONE', term_msg='Cleanup TERMINATED', target=self._clean,
+                         callback=callback, callback_args=callback_args)
 
-    for subdir, dirs, files in os.walk(source_dir):
-        dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+    def _clean(self) -> None:
+        self.print_message('Cleaning folder...')
+        for f in os.listdir(target_dir):
+            print(f)
+            subpath = os.path.join(target_dir, f)
+            try:
+                if os.path.isdir(subpath) and not f in EXCLUDE_DIRS:
+                    shutil.rmtree(subpath)
+                elif os.path.isfile(subpath):
+                    os.remove(subpath)
+            except Exception:
+                logger.exception("Error during clean!")
+                self.stop()
+            if self.stopped:
+                break
 
-        # No subdir
-        if not dirs or files:
-            subdir_splitted = os.path.normpath(subdir).split(os.sep)
-            subdirs_to_merge = subdir_splitted[len(sourcedir_splitted):]
-            converted_dir_name = SEPARATOR.join(subdirs_to_merge)
 
-            os.makedirs(os.path.join(target_dir, converted_dir_name))
-            print(converted_dir_name)
+class UpdateThread(DefaultStoppableThread):
+    def __init__(self, callback=None, callback_args=None) -> None:
+        super().__init__(finish_msg='Hardlink creation DONE', term_msg='Hardlink creation TERMINATED',
+                         target=self._update, callback=callback, callback_args=callback_args)
+        self.cleanup_thread = CleanupThread()
 
-            for file in files:
-                os.link(os.path.join(subdir, file), os.path.join(target_dir, converted_dir_name, file))
-    print('--- Hardlink creation DONE ---')
+    def _update(self) -> None:
+        self.cleanup_thread.execute_with_callback()
+        if (self.stopped):
+            return
+
+        self.print_message('Creating hardlinks...')
+        sourcedir_splitted = os.path.normpath(source_dir).split(os.sep)
+
+        for subdir, dirs, files in os.walk(source_dir):
+            dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+
+            # No subdir
+            if not dirs or files:
+                subdir_splitted = os.path.normpath(subdir).split(os.sep)
+                subdirs_to_merge = subdir_splitted[len(sourcedir_splitted):]
+                converted_dir_name = SEPARATOR.join(subdirs_to_merge)
+
+                try:
+                    os.makedirs(os.path.join(target_dir, converted_dir_name))
+                    print(converted_dir_name)
+
+                    for file in files:
+                        os.link(os.path.join(subdir, file), os.path.join(target_dir, converted_dir_name, file))
+                        if self.stopped:
+                            break
+                except Exception:
+                    logger.exception("Error during update!")
+
+                if self.stopped:
+                    break
+
+    def stop(self):
+        super().stop()
+        self.cleanup_thread.stop()
 
 
 class StructPhotoGUI(tkinter.Tk):
     def __init__(self, parent):
-        tkinter.Tk.__init__(self, parent)
+        super().__init__(parent)
         self.parent = parent
+        self.work_thread = None
         self.initialize()
 
     def initialize(self):
@@ -124,7 +192,7 @@ class StructPhotoGUI(tkinter.Tk):
         self.resizable(True, True)
         sys.stdout = StdoutRedirector(self.output_text_area)
 
-        self.work_thread = None
+        self.switch_button_enable(running=False)
 
     def OnSourceDirButtonClick(self):
         self.SelectDirectory(self.e_source_dir_entryVariable)
@@ -132,28 +200,26 @@ class StructPhotoGUI(tkinter.Tk):
     def OnTargetDirButtonClick(self):
         self.SelectDirectory(self.e_target_dir_entryVariable)
 
-    def SelectDirectory(self, entryVariable):
+    def SelectDirectory(self, entryVariable: tkinter.StringVar):
         directory = filedialog.askdirectory()
         if directory is not None and os.path.isdir(directory):
             entryVariable.set(directory)
 
     def OnCleanButtonClick(self):
-        self.refreshSourceAndTargetDir()
         if self.confirm_delete() is True:
-            self.work_thread = threading.Thread(target=self.clean_with_gui)
+            self.refreshSourceAndTargetDir()
+            self.work_thread = CleanupThread(callback=self.switch_button_enable, callback_args=(False,))
             self.work_thread.start()
 
     def OnUpdateButtonClick(self):
-        self.refreshSourceAndTargetDir()
         if self.confirm_delete() is True:
-            self.work_thread = threading.Thread(target=self.update_with_gui)
+            self.refreshSourceAndTargetDir()
+            self.work_thread = UpdateThread(callback=self.switch_button_enable, callback_args=(False,))
             self.work_thread.start()
 
 
     def OnCancelButtonClick(self):
-        self.work_thread._stop()
-        self.switch_button_enable(False)
-
+        self.work_thread.stop()
 
     def on_closing(self):
         sys.stdout = sys.__stdout__
@@ -163,27 +229,19 @@ class StructPhotoGUI(tkinter.Tk):
     def refreshSourceAndTargetDir(self):
         global source_dir
         global target_dir
-        self.switch_button_enable(True)
+        self.switch_button_enable(running=True)
         source_dir = os.path.abspath(self.e_source_dir_entryVariable.get())
         target_dir = os.path.abspath(self.e_target_dir_entryVariable.get())
 
 
-    def update_with_gui(self):
-        update()
-        self.switch_button_enable(False)
-
-
-    def clean_with_gui(self):
-        cleanup()
-        self.switch_button_enable(False)
-
-
     def switch_button_enable(self, running: bool):
         if running:
+            self.output_text_area.delete(1.0,tkinter.END)
             self.b_clean.config(state=tkinter.DISABLED)
             self.b_update.config(state=tkinter.DISABLED)
             self.b_cancel.config(state=tkinter.NORMAL)
         else:
+            self.work_thread = None
             self.b_clean.config(state=tkinter.NORMAL)
             self.b_update.config(state=tkinter.NORMAL)
             self.b_cancel.config(state=tkinter.DISABLED)
@@ -196,7 +254,7 @@ class StructPhotoGUI(tkinter.Tk):
                                       'Everything will be deleted in folder ' + target_dir + '\r\n THIS CANNOT BE UNDONE!!!\r\n' + 'Are you REALLY sure?')
 
 
-class IORedirector(object):
+class IORedirector:
     '''A general class for redirecting I/O to this Text widget.'''
 
     def __init__(self, text_area):
@@ -206,8 +264,8 @@ class IORedirector(object):
 class StdoutRedirector(IORedirector):
     '''A class for redirecting stdout to this Text widget.'''
 
-    def write(self, str):
-        self.text_area.insert(tkinter.END, str)
+    def write(self, string: str) -> None:
+        self.text_area.insert(tkinter.END, string)
 
 
 if __name__ == '__main__':
