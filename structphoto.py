@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import configparser
 import logging
 from collections import namedtuple
 import os
@@ -13,12 +14,11 @@ from tkinter import messagebox
 
 APPLICATION_TITLE = 'Organize photos for iOS'
 
-SEPARATOR = ' = '  # Works in iOS
-MESSAGE_HIGHLIGHT = '---'
-# source_dir = os.path.abspath('h:/temp/test')
-# target_dir = os.path.abspath('h:/temp/test-albums')
-source_dir = os.path.abspath('h:/Saját/MAIN/Fénykép')
-target_dir = os.path.abspath('h:/Saját/MAIN/Photos for iOS')
+SEPARATOR: str
+MESSAGE_HIGHLIGHT: str
+
+source_dir: str
+target_dir: str
 
 EXCLUDE_DIRS = [
     'iPod Photo Cache'
@@ -201,7 +201,7 @@ class StructPhotoGUI(tkinter.Tk):
         self.SelectDirectory(self.e_target_dir_entryVariable)
 
     def SelectDirectory(self, entryVariable: tkinter.StringVar):
-        directory = filedialog.askdirectory()
+        directory = filedialog.askdirectory(initialdir = entryVariable.get())
         if directory is not None and os.path.isdir(directory):
             entryVariable.set(directory)
 
@@ -269,6 +269,14 @@ class StdoutRedirector(IORedirector):
 
 
 if __name__ == '__main__':
+    config = configparser.ConfigParser()
+    config.read(['./config/structphoto.ini', '~/.structphoto/structphoto.ini'], 'UTF-8')
+
+    SEPARATOR = config['CONSTANTS']['SEPARATOR']
+    MESSAGE_HIGHLIGHT = config['CONSTANTS']['MESSAGE_HIGHLIGHT']
+    source_dir = os.path.abspath(config['PATHS']['SOURCE_DIR'])
+    target_dir = os.path.abspath(config['PATHS']['TARGET_DIR'])
+
     parser = argparse.ArgumentParser(description=APPLICATION_TITLE)
     main_group = parser.add_mutually_exclusive_group(required=True)
     main_group.add_argument('-c', '--clean', action='store_true', help='Clean the target folder only.')
