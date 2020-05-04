@@ -241,38 +241,38 @@ class StructPhotoGUI(tkinter.Tk):
 
         self.e_source_dir_entry_variable = tkinter.StringVar()
         self.e_source_dir = tkinter.Entry(self, textvariable=self.e_source_dir_entry_variable)
-        self.e_source_dir.grid(column=0, row=0, columnspan=2, sticky='EW', pady=10)
+        self.e_source_dir.grid(column=0, row=0, columnspan=3, sticky='EW', pady=10)
         self.e_source_dir_entry_variable.set(ConfigHolder().source_dir)
 
         b_source_dir = tkinter.Button(self, text=u"Select source directory...",
                                       command=self._on_source_dir_button_click)
-        b_source_dir.grid(column=3, row=0, sticky='EW', pady=10)
+        b_source_dir.grid(column=4, row=0, sticky='EW', pady=10)
 
         self.e_target_dir_entry_variable = tkinter.StringVar()
         self.e_target_dir = tkinter.Entry(self, textvariable=self.e_target_dir_entry_variable)
-        self.e_target_dir.grid(column=0, row=1, columnspan=2, sticky='EW', pady=10)
+        self.e_target_dir.grid(column=0, row=1, columnspan=3, sticky='EW', pady=10)
         self.e_target_dir_entry_variable.set(ConfigHolder().target_dir)
 
         b_target_dir = tkinter.Button(self, text=u"Select target directory...",
                                       command=self._on_target_dir_button_click)
-        b_target_dir.grid(column=3, row=1, sticky='EW', pady=10)
+        b_target_dir.grid(column=4, row=1, sticky='EW', pady=10)
 
         self.output_text_area = tkinter.Text()
         self.output_text_area.grid(column=0, row=3, columnspan=3, rowspan=3, sticky='EW', pady=10)
 
         # create a Scrollbar and associate it with txt
         scrollb = tkinter.Scrollbar(self, command=self.output_text_area.yview)
-        scrollb.grid(row=3, column=2, rowspan=3, sticky='nsew')
+        scrollb.grid(row=3, column=3, rowspan=3, sticky='nsew')
         self.output_text_area['yscrollcommand'] = scrollb.set
 
         self.b_clean = tkinter.Button(self, text=u"Clean", command=self._on_clean_button_click)
-        self.b_clean.grid(column=3, row=3, sticky='EW')
+        self.b_clean.grid(column=4, row=3, sticky='EW')
 
         self.b_update = tkinter.Button(self, text=u"Update", command=self._on_update_button_click)
-        self.b_update.grid(column=3, row=4, sticky='EW')
+        self.b_update.grid(column=4, row=4, sticky='EW')
 
         self.b_cancel = tkinter.Button(self, text=u"Cancel", command=self._on_cancel_button_click)
-        self.b_cancel.grid(column=3, row=5, sticky='EW')
+        self.b_cancel.grid(column=4, row=5, sticky='EW')
 
         self.grid_columnconfigure(0, weight=1)
         self.geometry("700x600")  # You want the size of the app to be this
