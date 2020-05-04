@@ -1,0 +1,6 @@
+[FORMAT]
+max-line-length=120
+max-parents=10
+max-args=6
+max-attributes=10
+min-public-methods=1
