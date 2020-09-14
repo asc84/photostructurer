@@ -9,7 +9,11 @@ This is a workaround for the iOS album problem, that there are no "subalbums". W
 ### Installation
 1. Install Python 3.7 (preferably with Pyenv)
 2. Install Pipenv, preferably with your system Python.
-3. Create a config file from config_template/config.ini into the config folder.
+3. Copy the config file from config_template/structphoto.ini location to any of the following:
+./config/structphoto.ini or ~/.structphoto/structphoto.ini
+4. Before you run the script, please ensure, that the PATHS are set up correctly!
+The TARGET_DIR will be handled by the script and its content may get deleted, so you should use a new folder for this.
+Also please remove the remarks from the config file.
 
 [CONSTANTS]  
 SEPARATOR: " = " This will separate the concatenated directory names.  
