@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-""" Structure Photos in a deep hierarchy into a flat structure using hardlinks.
-
+"""
+Structure Photos from a deep hierarchy into a flat structure using hardlinks.
 """
 
 import argparse
@@ -23,8 +23,8 @@ LOGGER = logging.getLogger('structphoto')
 
 
 def run_cli(arguments: argparse.Namespace) -> None:
-    """ Run the script on the command line
-
+    """
+    Run the script on the command line
     """
 
     print('Source directory is: ' + ConfigHolder().source_dir)
@@ -50,9 +50,9 @@ def run_gui() -> None:
 
 
 class ConfigHolder():
-    """ Class to hold the config
+    """
+    Class to hold the config
     This is handled as singleton, it will always return the same instance, when trying to instantiate it.
-
     """
 
     __instance = None
@@ -79,8 +79,8 @@ class ConfigHolder():
 
 
 class DefaultStoppableThread(threading.Thread):
-    """ Common sublass of Thread, which is stoppable
-
+    """
+    Common sublass of Thread, which is stoppable
     """
 
     def __init__(self, finish_msg: str, term_msg: str, target=None, callback=None, callback_args=None) -> None:
@@ -92,7 +92,7 @@ class DefaultStoppableThread(threading.Thread):
 
     def execute_with_callback(self) -> None:
         """
-        Execute the method and call the collback function afterwards.
+        Execute the method and call the callback function afterwards.
         """
 
         self.params.method()
@@ -132,8 +132,8 @@ class DefaultStoppableThread(threading.Thread):
 
 
 class CleanupThread(DefaultStoppableThread):
-    """ Class for handling cleanup
-
+    """
+    Class for handling cleanup
     """
 
     def __init__(self, callback=None, callback_args=None) -> None:
@@ -159,8 +159,8 @@ class CleanupThread(DefaultStoppableThread):
 
 
 class UpdateThread(DefaultStoppableThread):
-    """ Class for handling update
-
+    """
+    Class for handling update
     """
 
     def __init__(self, callback=None, callback_args=None) -> None:
@@ -208,8 +208,8 @@ class UpdateThread(DefaultStoppableThread):
 
 
 class StructPhotoGUI(tkinter.Tk):
-    """ Class for handling the GUI
-
+    """
+    Class for handling the GUI
     """
 
     __instance = None
@@ -337,8 +337,8 @@ class StructPhotoGUI(tkinter.Tk):
 
 
 class IORedirector():
-    """ A class for redirecting stdout to this Text widget.
-
+    """
+    A class for redirecting stdout to this text widget.
     """
 
     def __init__(self, text_area: tkinter.Text) -> None:
@@ -352,8 +352,8 @@ class IORedirector():
 
 
 class SpaceAwareConfigParser(configparser.ConfigParser):
-    """ A special config parser implementation, which repects leading and trailing spaces.
-
+    """
+    A special config parser implementation, which respects leading and trailing spaces.
     Original: https://thekondor.blogspot.com/2011/11/python-make-configparser-aware-of.html
     """
     QUOTE_SYMBOLS = ('"', "'")
